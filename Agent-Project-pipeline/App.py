@@ -46,11 +46,8 @@ def is_math_expression(query):
 
 # Helper function for Wikipedia summary
 def get_wikipedia_summary(query, num_sentences=3):
-    try:
-        summary = wikipedia.summary(query, sentences=num_sentences)
-        return summary
-    except Exception as e:
-        return f"Could not find Wikipedia summary: {e}"
+    summary = wikipedia.summary(query, sentences=num_sentences)
+    return summary
 
 # Only create and use the agent if the user has provided a Gemini API key
 if gemini_api_key:
@@ -89,4 +86,4 @@ if gemini_api_key:
                     st.info("Wikipedia summary:")
                     st.write(summary)
 else:
-    st.info("Please enter your Gemini API key above to enable the Calculator agent.")
+    st.info("Please enter your Gemini API key above to enable the agent.")
