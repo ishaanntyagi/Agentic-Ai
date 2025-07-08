@@ -8,10 +8,10 @@
 
 Below are actual outputs from the Streamlit app:
 
-### Math Calculation
+### Wikipedia Summarization
 ![Screenshot 1](Agent-Project-pipeline/Outputs/Screenshot%202025-07-08%20150623.png)
 
-### Wikipedia Summarization
+### Math Calculation
 ![Screenshot 2](Agent-Project-pipeline/Outputs/Screenshot%202025-07-08%20150938.png)
 
 ### Error Handling
