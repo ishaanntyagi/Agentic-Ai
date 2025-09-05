@@ -9,13 +9,14 @@
 Below are actual outputs from the Streamlit app:
 
 ### Wikipedia Summarization
-![Screenshot 1](Agent-Project-pipeline/Outputs/Screenshot%202025-07-08%20150623.png)
+
 
 ### Math Calculation
-![Screenshot 2](Agent-Project-pipeline/Outputs/Screenshot%202025-07-08%20150938.png)
+
 
 ### Error Handling
-![Screenshot 3](Agent-Project-pipeline/Outputs/Screenshot%202025-07-08%20151206.png)
+
+
 
 ---
 
