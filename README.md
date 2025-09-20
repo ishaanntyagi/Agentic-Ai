@@ -11,7 +11,7 @@ Below are actual outputs from the Streamlit app:
 ### Wikipedia Summarization
 
 
-### Math Calculation
+### Math Calculation 
 
 
 ### Error Handling
