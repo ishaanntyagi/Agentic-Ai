@@ -1,4 +1,4 @@
-# Agentic-Ai
+# Agentic-Ai  
  
 **Agentic-Ai** is a beginner-friendly project to help you learn and experiment with Generative AI “agents” using Python. This repository offers super-simple code and step-by-step explanations, so anyone—even with no AI background—can start building agentic systems that combine language models, tools, and external APIs.
 
