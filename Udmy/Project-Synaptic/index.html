@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Medical Report Assistant</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <h2>Medical Captioning</h2>
+  </nav>
+
+  <main class="container">
+    <div class="card">
+      <div class="icon">🧠</div>
+      <h1>Medical Report Assistant</h1>
+      <p class="subtitle">Upload a PDF medical report then ask questions about it.</p>
+
+      <!-- UPLOAD BOX -->
+      <div id="uploadBox" class="upload-box">
+        <p id="uploadText">📄 Click or drag & drop a PDF here</p>
+        <input id="pdfInput" type="file" accept="application/pdf" />
+      </div>
+
+      <button id="initBtn" class="primary">Initialize System (upload PDF)</button>
+
+      <textarea id="question" placeholder="Type your question here..."></textarea>
+      <button id="askBtn" class="primary">Ask Question</button>
+
+      <div id="responseBox" class="responseBox hidden">
+        <h3>AI Response</h3>
+        <p id="responseText"></p>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

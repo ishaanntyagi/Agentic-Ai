@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Image Analysis</title>
+    <style>
+        /* CSS Styles to match your screenshots */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 40px;
+            color: #4f46e5; /* Brain Blue/Purple */
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #6b7280;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 30px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #4f46e5;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+            margin-top: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box; /* Fixes padding width issues */
+        }
+
+        button {
+            background-color: #8b5cf6; /* The Purple from your screenshot */
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #7c3aed;
+        }
+
+        button:disabled {
+            background-color: #c4b5fd;
+            cursor: not-allowed;
+        }
+
+        #result-area {
+            margin-top: 20px;
+            text-align: left;
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            white-space: pre-wrap; /* Keeps formatting */
+            font-size: 14px;
+            color: #333;
+        }
+
+        .loading {
+            display: none;
+            color: #8b5cf6;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon">🧠</div>
+        <h1>Medical Image Analysis</h1>
+        <p>Upload an MRI scan for AI-powered captioning.</p>
+
+        <form id="uploadForm">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div id="uploadText">
+                    <span style="font-size: 24px;">☁️</span><br>
+                    <span>Click to Upload MRI</span>
+                </div>
+                <img id="preview" class="preview-img">
+                <input type="file" id="fileInput" name="file" accept="image/*" style="display: none" onchange="previewImage(event)">
+            </div>
+
+            <div class="input-group">
+                <label>Clinical Question (Optional)</label>
+                <input type="text" id="promptInput" name="prompt" placeholder="e.g., Is there a tumor? Describe its location.">
+            </div>
+
+            <button type="submit" id="analyzeBtn">Analyze MRI</button>
+        </form>
+
+        <div class="loading" id="loadingText">Analyzing scan with Groq AI...</div>
+        <div id="result-area"></div>
+    </div>
+
+    <script>
+        // 1. Preview the image when selected
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('preview');
+                output.src = reader.result;
+                output.style.display = 'block';
+                document.getElementById('uploadText').style.display = 'none';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        // 2. Handle Form Submission
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const promptInput = document.getElementById('promptInput');
+            const resultArea = document.getElementById('result-area');
+            const loadingText = document.getElementById('loadingText');
+            const btn = document.getElementById('analyzeBtn');
+
+            if(fileInput.files.length === 0) {
+                alert("Please select an image first.");
+                return;
+            }
+
+            // UI Updates
+            btn.disabled = true;
+            loadingText.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            // Prepare Data
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('prompt', promptInput.value || "Describe this medical image in detail. Identify potential anomalies.");
+
+            try {
+                // Send to Flask Backend
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if(data.error) {
+                    resultArea.innerHTML = "Error: " + data.error;
+                } else {
+                    // Render Markdown-style simple text
+                    resultArea.innerHTML = "<strong>Analysis Report:</strong><br><br>" + data.result;
+                }
+                resultArea.style.display = 'block';
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while connecting to the server.");
+            } finally {
+                btn.disabled = false;
+                loadingText.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
