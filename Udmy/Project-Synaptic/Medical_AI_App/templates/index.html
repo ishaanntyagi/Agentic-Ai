@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Console</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --white: #fff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar (Intake) */
+        .sidebar { width: 350px; background: var(--white); border-right: 1px solid #e2e8f0; padding: 25px; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar h2 { color: var(--primary); margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #64748b; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
+        
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 10px; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        /* Main Chat Area */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+        
+        .chat-header { padding: 15px 25px; background: var(--white); border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .status-badge { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: none; }
+
+        .messages { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; }
+        .msg-ai { background: var(--white); border: 1px solid #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg-user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        .input-box { padding: 20px; background: var(--white); border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        .input-box input { border-radius: 20px; padding-left: 15px; }
+        
+        /* Overlay for Loading */
+        .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 10; }
+        .spinner { width: 30px; height: 30px; border: 3px solid #e2e8f0; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR: INTAKE FORM -->
+    <div class="sidebar">
+        <h2>📋 Patient Intake</h2>
+        
+        <div class="form-group">
+            <label>AI Model</label>
+            <select id="modelSelect">
+                <option value="groq">Groq (Cloud - Fast)</option>
+                <option value="ollama">Ollama (Local - Private)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Patient Name</label>
+            <input type="text" id="pName" placeholder="Name">
+        </div>
+        <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="pAge" placeholder="Age">
+        </div>
+        <div class="form-group">
+            <label>Chief Complaint</label>
+            <textarea id="pIssue" placeholder="Symptoms..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Attach Report (PDF) <small>(Optional)</small></label>
+            <input type="file" id="pdfFile" accept=".pdf">
+        </div>
+
+        <button class="btn-primary" onclick="startSession()">🚀 Start Consultation</button>
+        <div id="statusMsg" style="margin-top:10px; font-size:0.85rem; color:#64748b; text-align:center;"></div>
+    </div>
+
+    <!-- MAIN CHAT AREA -->
+    <div class="chat-area">
+        <div class="chat-header">
+            <strong>Medical AI Assistant</strong>
+            <span id="sessionStatus" class="status-badge">Active Session</span>
+        </div>
+
+        <div class="messages" id="chatWindow">
+            <div class="message msg-ai">
+                👋 Hello. Please fill out the patient intake form on the left and upload any relevant medical reports to begin.
+            </div>
+        </div>
+        
+        <!-- Loading Overlay -->
+        <div class="overlay" id="loader">
+            <div class="spinner"></div>
+            <div id="loaderText">Processing...</div>
+        </div>
+
+        <div class="input-box">
+            <input type="text" id="userInput" placeholder="Ask about the patient or report..." onkeypress="handleEnter(event)">
+            <button class="btn-primary" style="width:auto; padding:0 25px; margin:0;" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Initialize Session (Intake + Upload)
+        async function startSession() {
+            const btn = document.querySelector('.btn-primary');
+            const status = document.getElementById('statusMsg');
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loaderText');
+
+            // Gather Data
+            const model = document.getElementById('modelSelect').value;
+            const patientData = {
+                name: document.getElementById('pName').value,
+                age: document.getElementById('pAge').value,
+                issue: document.getElementById('pIssue').value
+            };
+
+            if(!patientData.name) { alert("Please enter at least a Patient Name."); return; }
+
+            btn.disabled = true;
+            status.innerText = "Initializing...";
+            
+            try {
+                // Step A: Send Patient Data
+                await fetch('/initialize_session', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ model, patient_data: patientData })
+                });
+
+                // Step B: Upload PDF (if selected)
+                const fileInput = document.getElementById('pdfFile');
+                if(fileInput.files.length > 0) {
+                    status.innerText = "Processing PDF (Embeddings)...";
+                    loaderText.innerText = "Reading Medical Report...";
+                    loader.style.display = 'flex';
+                    
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    
+                    const uploadRes = await fetch('/upload_report', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if(!uploadRes.ok) throw new Error("PDF Upload Failed");
+                }
+
+                // Success State
+                document.getElementById('sessionStatus').style.display = 'block';
+                status.innerText = "✅ Session Ready";
+                status.style.color = 'green';
+                addMessage('ai', `Session started for **${patientData.name}**. You can now ask questions.`);
+                
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+                status.innerText = "❌ Initialization Failed";
+                status.style.color = 'red';
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        // 2. Chat Logic
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if(!text) return;
+
+            addMessage('user', text);
+            input.value = '';
+            
+            // Show typing indicator
+            const loader = document.getElementById('loader');
+            loaderText.innerText = "AI is thinking...";
+            loader.style.display = 'flex';
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await res.json();
+                
+                if(data.error) {
+                    addMessage('ai', "⚠️ Error: " + data.error);
+                } else {
+                    addMessage('ai', data.response);
+                }
+            } catch (err) {
+                addMessage('ai', "⚠️ Network Error");
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        function addMessage(role, text) {
+            const win = document.getElementById('chatWindow');
+            const div = document.createElement('div');
+            div.className = `message ${role === 'user' ? 'msg-user' : 'msg-ai'}`;
+            // Simple bold formatting
+            div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+            win.appendChild(div);
+            win.scrollTop = win.scrollHeight;
+        }
+
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+    </script>
+</body>
+</html>

@@ -22,7 +22,7 @@ def analyze():
         return jsonify({'error': 'No file uploaded'}), 400
     
     file = request.files['file']
-    user_prompt = request.form.get('prompt', 'Describe this medical image in detail. Identify potential anomalies.')
+    user_prompt = request.form.get('prompt', 'Describe this medical image in detail. Identify potential anomalies.At the END I need A severity SCORE AND HOW TUMOR MAY AFFECT THE PATEINT < THE SEVIERITY SCORE IS COMPULSORYYYYY')
 
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
